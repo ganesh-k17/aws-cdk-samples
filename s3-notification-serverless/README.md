@@ -28,3 +28,7 @@ sns is configured with sqs,  So what ever sns is published will be sent to sqs
 sqs is configured to trigger event with sqs obj
 lambda logs the sqs event in cloudwatch log
 ```
+
+## Diagram
+
+![alt text](image.png)
