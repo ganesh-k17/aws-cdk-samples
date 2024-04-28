@@ -7,6 +7,9 @@ import * as sns from "aws-cdk-lib/aws-sns";
 // import * as ssm from "aws-cdk-lib/aws-ssm";
 import * as subscriptions from "aws-cdk-lib/aws-sns-subscriptions";
 import * as eventsources from "aws-cdk-lib/aws-lambda-event-sources";
+import * as s3 from "aws-cdk-lib/aws-s3";
+import { aws_s3_notifications } from "aws-cdk-lib";
+import { S3ToSns } from "@aws-solutions-constructs/aws-s3-sns";
 
 interface S3NotificationServerlessProps extends StackProps {
   account: string;
@@ -20,13 +23,6 @@ export class S3NotificationServerless extends Stack {
     props: S3NotificationServerlessProps
   ) {
     super(scope, id, props);
-
-    // The code that defines your stack goes here
-
-    // example resource
-    // const queue = new sqs.Queue(this, 'AwsQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
 
     // SNS TOPIC FOR PUBLISH
     const sns_notification_topic = new sns.Topic(
@@ -67,7 +63,7 @@ export class S3NotificationServerless extends Stack {
       }
     );
 
-    // //Workflow Lambda Policy and Attachment
+    // //Workflow Lambda Policy and Attachment (This is for if the lambda needs any of the activities/)
     // const sns_notification_policy = new iam.PolicyStatement({
     //   actions: [
     //     "ssm:GetParameter",
@@ -90,22 +86,23 @@ export class S3NotificationServerless extends Stack {
     sns_notification_handler.addEventSource(
       new eventsources.SqsEventSource(sns_notification_queue)
     );
+
+    const bucket = new s3.Bucket(this, "sns-notification-bucket");
+
+    // Subscribe the S3 bucket to the SNS topic
+    bucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new aws_s3_notifications.SnsDestination(sns_notification_topic)
+    );
+
+    //**This would create s3 and sns automatically (but all with new resources.) */
+    // new S3ToSns(this, "S3ToSNSPattern", {
+    //   bucketProps: {
+    //     bucketName: bucket.bucketName,
+    //   },
+    //   topicProps: {
+    //     topicName: "sns-notification-topic",
+    //   },
+    // });
   }
 }
-
-// import * as cdk from 'aws-cdk-lib';
-// import { Construct } from 'constructs';
-// // import * as sqs from 'aws-cdk-lib/aws-sqs';
-
-// export class S3NotificationServerlessStack extends cdk.Stack {
-//   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
-//     super(scope, id, props);
-
-//     // The code that defines your stack goes here
-
-//     // example resource
-//     // const queue = new sqs.Queue(this, 'S3NotificationServerlessQueue', {
-//     //   visibilityTimeout: cdk.Duration.seconds(300)
-//     // });
-//   }
-// }
